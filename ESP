@@ -1,5 +1,9 @@
 -- esp.lua
 --// Variables
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 local cache = {}
 
 local bones = {
@@ -111,8 +115,8 @@ local function isPlayerBehindWall(player)
         return false
     end
 
-    local ray = Ray.new(Camera.CFrame.Position, (rootPart.Position - Camera.CFrame.Position).Unit * (rootPart.Position - Camera.CFrame.Position).Magnitude)
-    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, character})
+    local ray = Ray.new(camera.CFrame.Position, (rootPart.Position - camera.CFrame.Position).Unit * (rootPart.Position - camera.CFrame.Position).Magnitude)
+    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {localPlayer.Character, character})
     
     return hit and hit:IsA("Part")
 end
@@ -131,17 +135,17 @@ end
 local function updateEsp()
     for player, esp in pairs(cache) do
         local character, team = player.Character, player.Team
-        if character and (not ESP_SETTINGS.Teamcheck or (team and team ~= LocalPlayer.Team)) then
+        if character and (not ESP_SETTINGS.Teamcheck or (team and team ~= localPlayer.Team)) then
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             local head = character:FindFirstChild("Head")
             local humanoid = character:FindFirstChild("Humanoid")
             local isBehindWall = ESP_SETTINGS.WallCheck and isPlayerBehindWall(player)
             local shouldShow = not isBehindWall and ESP_SETTINGS.Enabled
             if rootPart and head and humanoid and shouldShow then
-                local position, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                local position, onScreen = camera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
-                    local hrp2D = Camera:WorldToViewportPoint(rootPart.Position)
-                    local charSize = (Camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
+                    local hrp2D = camera:WorldToViewportPoint(rootPart.Position)
+                    local charSize = (camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y - camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
                     local boxSize = Vector2.new(math.floor(charSize * 1.8), math.floor(charSize * 1.9))
                     local boxPosition = Vector2.new(math.floor(hrp2D.X - charSize * 1.8 / 2), math.floor(hrp2D.Y - charSize * 1.6 / 2))
 
@@ -273,7 +277,7 @@ local function updateEsp()
                     end
 
                     if ESP_SETTINGS.ShowDistance and ESP_SETTINGS.Enabled then
-                        local distance = (Camera.CFrame.p - rootPart.Position).Magnitude
+                        local distance = (camera.CFrame.p - rootPart.Position).Magnitude
                         esp.distance.Text = string.format("%.1f studs", distance)
                         esp.distance.Position = Vector2.new(boxPosition.X + boxSize.X / 2, boxPosition.Y + boxSize.Y + 5)
                         esp.distance.Visible = true
@@ -302,8 +306,8 @@ local function updateEsp()
                             local parentBone, childBone = lineData[2], lineData[3]
                     
                             if player.Character and player.Character[parentBone] and player.Character[childBone] then
-                                local parentPosition = Camera:WorldToViewportPoint(player.Character[parentBone].Position)
-                                local childPosition = Camera:WorldToViewportPoint(player.Character[childBone].Position)
+                                local parentPosition = camera:WorldToViewportPoint(player.Character[parentBone].Position)
+                                local childPosition = camera:WorldToViewportPoint(player.Character[childBone].Position)
                     
                                 skeletonLine.From = Vector2.new(parentPosition.X, parentPosition.Y)
                                 skeletonLine.To = Vector2.new(childPosition.X, childPosition.Y)
@@ -326,15 +330,15 @@ local function updateEsp()
                         if ESP_SETTINGS.TracerPosition == "Top" then
                             tracerY = 0
                         elseif ESP_SETTINGS.TracerPosition == "Middle" then
-                            tracerY = Camera.ViewportSize.Y / 2
+                            tracerY = camera.ViewportSize.Y / 2
                         else
-                            tracerY = Camera.ViewportSize.Y
+                            tracerY = camera.ViewportSize.Y
                         end
-                        if ESP_SETTINGS.Teamcheck and player.TeamColor == LocalPlayer.TeamColor then
+                        if ESP_SETTINGS.Teamcheck and player.TeamColor == localPlayer.TeamColor then
                             esp.tracer.Visible = false
                         else
                             esp.tracer.Visible = true
-                            esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, tracerY)
+                            esp.tracer.From = Vector2.new(camera.ViewportSize.X / 2, tracerY)
                             esp.tracer.To = Vector2.new(hrp2D.X, hrp2D.Y)            
                         end
                     else
@@ -386,13 +390,13 @@ local function updateEsp()
 end
 
 for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
+    if player ~= localPlayer then
         createEsp(player)
     end
 end
 
 Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
+    if player ~= localPlayer then
         createEsp(player)
     end
 end)
